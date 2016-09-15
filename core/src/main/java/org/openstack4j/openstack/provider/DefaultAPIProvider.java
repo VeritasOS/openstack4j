@@ -2,6 +2,8 @@ package org.openstack4j.openstack.provider;
 
 import com.google.common.collect.Maps;
 import org.openstack4j.api.APIProvider;
+import org.openstack4j.api.barbican.BarbicanService;
+import org.openstack4j.api.barbican.ContainerService;
 import org.openstack4j.api.compute.ComputeFloatingIPService;
 import org.openstack4j.api.compute.ComputeImageService;
 import org.openstack4j.api.compute.ComputeSecurityGroupService;
@@ -54,6 +56,7 @@ import org.openstack4j.api.identity.v3.ServiceEndpointService;
 import org.openstack4j.api.identity.v3.TokenService;
 import org.openstack4j.api.identity.v3.UserService;
 import org.openstack4j.api.image.ImageService;
+import org.openstack4j.api.image.v2.TaskService;
 import org.openstack4j.api.manila.SchedulerStatsService;
 import org.openstack4j.api.manila.SecurityServiceService;
 import org.openstack4j.api.manila.ShareInstanceService;
@@ -121,6 +124,12 @@ import org.openstack4j.api.storage.ObjectStorageAccountService;
 import org.openstack4j.api.storage.ObjectStorageContainerService;
 import org.openstack4j.api.storage.ObjectStorageObjectService;
 import org.openstack4j.api.storage.ObjectStorageService;
+import org.openstack4j.api.tacker.TackerService;
+import org.openstack4j.api.tacker.TackerServiceImpl;
+import org.openstack4j.api.tacker.VimService;
+import org.openstack4j.api.tacker.VnfService;
+import org.openstack4j.api.tacker.VnfdService;
+import org.openstack4j.api.storage.SchedulerStatsGetPoolService;
 import org.openstack4j.api.telemetry.AlarmService;
 import org.openstack4j.api.telemetry.CapabilitiesService;
 import org.openstack4j.api.telemetry.EventService;
@@ -128,6 +137,13 @@ import org.openstack4j.api.telemetry.MeterService;
 import org.openstack4j.api.telemetry.ResourceService;
 import org.openstack4j.api.telemetry.SampleService;
 import org.openstack4j.api.telemetry.TelemetryService;
+import org.openstack4j.api.trove.DatabaseService;
+import org.openstack4j.api.trove.DatastoreService;
+import org.openstack4j.api.trove.InstanceFlavorService;
+import org.openstack4j.api.trove.InstanceService;
+import org.openstack4j.api.trove.TroveService;
+import org.openstack4j.openstack.barbican.internal.BarbicanServiceImpl;
+import org.openstack4j.openstack.barbican.internal.ContainerServiceImpl;
 import org.openstack4j.openstack.compute.internal.ComputeFloatingIPServiceImpl;
 import org.openstack4j.openstack.compute.internal.ComputeImageServiceImpl;
 import org.openstack4j.openstack.compute.internal.ComputeSecurityGroupServiceImpl;
@@ -179,6 +195,7 @@ import org.openstack4j.openstack.identity.v3.internal.ServiceEndpointServiceImpl
 import org.openstack4j.openstack.identity.v3.internal.TokenServiceImpl;
 import org.openstack4j.openstack.identity.v3.internal.UserServiceImpl;
 import org.openstack4j.openstack.image.internal.ImageServiceImpl;
+import org.openstack4j.openstack.image.v2.internal.TaskServiceImpl;
 import org.openstack4j.openstack.manila.internal.SchedulerStatsServiceImpl;
 import org.openstack4j.openstack.manila.internal.SecurityServiceServiceImpl;
 import org.openstack4j.openstack.manila.internal.ShareInstanceServiceImpl;
@@ -242,10 +259,14 @@ import org.openstack4j.openstack.storage.block.internal.BlockVolumeServiceImpl;
 import org.openstack4j.openstack.storage.block.internal.BlockVolumeSnapshotServiceImpl;
 import org.openstack4j.openstack.storage.block.internal.BlockVolumeTransferServiceImpl;
 import org.openstack4j.openstack.storage.block.internal.CinderZoneServiceImpl;
+import org.openstack4j.openstack.storage.block.internal.SchedulerStatsGetPoolServiceImpl;
 import org.openstack4j.openstack.storage.object.internal.ObjectStorageAccountServiceImpl;
 import org.openstack4j.openstack.storage.object.internal.ObjectStorageContainerServiceImpl;
 import org.openstack4j.openstack.storage.object.internal.ObjectStorageObjectServiceImpl;
 import org.openstack4j.openstack.storage.object.internal.ObjectStorageServiceImpl;
+import org.openstack4j.openstack.tacker.internal.VimServiceImpl;
+import org.openstack4j.openstack.tacker.internal.VnfServiceImpl;
+import org.openstack4j.openstack.tacker.internal.VnfdServiceImpl;
 import org.openstack4j.openstack.telemetry.internal.AlarmServiceImpl;
 import org.openstack4j.openstack.telemetry.internal.CapabilitiesServiceImpl;
 import org.openstack4j.openstack.telemetry.internal.EventServiceImpl;
@@ -253,8 +274,12 @@ import org.openstack4j.openstack.telemetry.internal.MeterServiceImpl;
 import org.openstack4j.openstack.telemetry.internal.ResourceServiceImpl;
 import org.openstack4j.openstack.telemetry.internal.SampleServiceImpl;
 import org.openstack4j.openstack.telemetry.internal.TelemetryServiceImpl;
-import org.openstack4j.api.storage.SchedulerStatsGetPoolService;
-import org.openstack4j.openstack.storage.block.internal.SchedulerStatsGetPoolServiceImpl;
+import org.openstack4j.openstack.trove.internal.DBDatabaseServiceImpl;
+import org.openstack4j.openstack.trove.internal.DBDatastoreServiceImpl;
+import org.openstack4j.openstack.trove.internal.DBFlavorServiceImpl;
+import org.openstack4j.openstack.trove.internal.DBInstanceServiceImpl;
+import org.openstack4j.openstack.trove.internal.DBUserServiceImpl;
+import org.openstack4j.openstack.trove.internal.TroveServiceImpl;
 
 import java.util.Map;
 
@@ -405,8 +430,22 @@ public class DefaultAPIProvider implements APIProvider {
         bind(ListenerV2Service.class, ListenerV2ServiceImpl.class);
         bind(HealthMonitorV2Service.class, HealthMonitorV2ServiceImpl.class);
         bind(LbPoolV2Service.class, LbPoolV2ServiceImpl.class);
+        bind(TroveService.class, TroveServiceImpl.class);
+        bind(InstanceFlavorService.class, DBFlavorServiceImpl.class);
+        bind(DatastoreService.class, DBDatastoreServiceImpl.class);
+        bind(DatabaseService.class, DBDatabaseServiceImpl.class);
+        bind(org.openstack4j.api.trove.UserService.class, DBUserServiceImpl.class);
+        bind(InstanceService.class, DBInstanceServiceImpl.class);
         bind(SchedulerStatsGetPoolService.class, SchedulerStatsGetPoolServiceImpl.class);
-    }   
+        bind(BarbicanService.class, BarbicanServiceImpl.class);
+        bind(ContainerService.class, ContainerServiceImpl.class);
+        bind(TackerService.class, TackerServiceImpl.class);
+        bind(VnfdService.class, VnfdServiceImpl.class);
+        bind(VnfService.class, VnfServiceImpl.class);
+        bind(VimService.class, VimServiceImpl.class);
+        bind(org.openstack4j.api.image.v2.ImageService.class, org.openstack4j.openstack.image.v2.internal.ImageServiceImpl.class);
+        bind(TaskService.class, TaskServiceImpl.class);
+    }
 
     /**
      * {@inheritDoc}
